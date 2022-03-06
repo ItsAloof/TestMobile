@@ -28,8 +28,12 @@ public class GameManager : MonoBehaviour
                     Vector3 pos = Input.GetTouch(0).position;
                     pos.z = 10;
                     GameObject go = Instantiate(ball, parent.transform);
-                    Color color = Random.ColorHSV(0, 360);
-                    go.GetComponent<SpriteRenderer>().color = color;
+                    float h = Random.Range(0, 360);
+                    Color color = Random.ColorHSV(0, 1);
+                    color.a = 100;
+                    Debug.Log($"Color: {color.r}, {color.g}, {color.b} from Hue: {h}");
+                    SpriteRenderer renderer = go.GetComponent<SpriteRenderer>();
+                    renderer.color = color;
                     go.transform.position = Camera.main.ScreenToWorldPoint(pos);
                 }
             }
