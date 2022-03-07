@@ -15,7 +15,11 @@ public class GameManager : MonoBehaviour
     Text UpgradeCostText;
 
     [SerializeField]
-    Text balance; 
+    Text PurchaseMinerText;
+
+
+    [SerializeField]
+    public Text balance; 
 
     //[SerializeField]
     //GameObject parent;
@@ -25,22 +29,32 @@ public class GameManager : MonoBehaviour
 
     [Tooltip("Doge coin prefab")]
     [SerializeField]
-    GameObject dogeCoin;
+    public GameObject dogeCoin;
+
+    public static GameManager Instance;
 
     List<GameObject> balls = new List<GameObject>();
     int multiplier = 2;
     int upgradeAmount = 2;
-    double cost = 100.00;
+    double upgradeCost = 100.00;
+    double minerCost = 50.00;
+
+    bool _stopMining = false;
 
     bool buttonPressed = false;
-    // Start is called before the first frame update
 
-    private BankAccount player { get; set; }
+    public static double DogeCoinValue = 0.1247;
+
+    private Player player { get; set; }
     void Start()
     {
-        player = new BankAccount("Aloof Inc.");
-        UpgradeCostText.text = $"Upgrade\n{cost.ToString("C")}";
+        Instance = this;
+        this.player = new Player(new BankAccount("Aloof Inc."));
+        UpgradeCostText.text = $"Upgrade\n{upgradeCost.ToString("C")}";
+        PurchaseMinerText.text = $"Purchase Miner\n{minerCost.ToString("C")}";
+        player.deposit(200);
     }
+
 
     // Update is called once per frame
     void Update()
@@ -74,22 +88,26 @@ public class GameManager : MonoBehaviour
     {
         double random = System.Math.Round(new System.Random().NextDouble(), 5, System.MidpointRounding.AwayFromZero);
         double amount = random * multiplier;
-        Debug.Log($"Giving {player.getName()} {amount} dogecoin which is ${amount*0.1247}");
-        player.addMoney(amount*0.1247);
-        updateBalance();
-        Destroy(Instantiate(dogeCoin, coinParent.transform), 3f);
+        //Debug.Log($"Giving {player.getBankAccount().getName()} {amount} dogecoin which is ${amount * 0.1247}");
+        player.deposit(amount * 0.1247);
+        dropDogeCoin(dogeCoin);
+    }
+
+    public static void dropDogeCoin(GameObject coin)
+    {
+        Destroy(Instantiate(coin, Instance.coinParent.transform), 3f);
     }
 
     public void upgrade()
     {
-        if(player.getBalance().getIntBalance() >= new System.Numerics.BigInteger(cost))
+        if(player.getBankAccount().getBalance().getIntBalance() >= new System.Numerics.BigInteger(upgradeCost))
         {
             multiplier += upgradeAmount;
+            upgradeMiners();
             upgradeAmount = multiplier / 2;
-            player.addMoney(-cost);
-            cost *= 1.25;
-            updateBalance();
-            UpgradeCostText.text = $"Upgrade\n{cost.ToString("C")}";
+            player.withdraw(upgradeCost);
+            upgradeCost *= 1.25;
+            UpgradeCostText.text = $"Upgrade\n{upgradeCost.ToString("C")}";
             return;
         }
         else
@@ -98,9 +116,49 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void updateBalance()
+    public void upgradeMiners()
     {
-        balance.text = $"Balance: {player.getBalanceString()}";
+        if (player.getMiners().Count == 0)
+            return;
+        foreach(Miner miner in player.getMiners())
+        {
+            miner.setMultiplier(multiplier);
+        }
+    }
+
+    public void purchase()
+    {
+        if (player.getBankAccount().getBalance().getIntBalance() >= new System.Numerics.BigInteger(minerCost))
+        {
+            player.withdraw(minerCost);
+            minerCost *= 1.5;
+            PurchaseMinerText.text = $"Purchase Miner\n{minerCost.ToString("C")}";
+            if (player.getMiners().Count == 0)
+            {
+                StartCoroutine(StartMining());
+            }
+            player.addMiner(new Miner(multiplier));
+            return;
+        }
+        else
+        {
+            StartCoroutine(InsufficientFundsMsg());
+        }
+    }
+
+    public static void updateBalance(BankAccount account, Text balance)
+    {
+        balance.text = $"Balance: {account.getBalanceString()}";
+        
+    }
+
+    IEnumerator StartMining()
+    {
+        while(!_stopMining)
+        {
+            Debug.Log($"Running {player.getMiners().Count} miner(s) with a yield of {player.runMiners()} dogecoins");
+            yield return new WaitForSeconds(1f);
+        }
     }
 
     IEnumerator InsufficientFundsMsg()

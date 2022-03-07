@@ -42,7 +42,7 @@ public class BigDecimal
 
     public override string ToString()
     {
-        return $"{number.ToString()}.{Math.Round(change, 5, MidpointRounding.AwayFromZero).ToString().Substring(2)}";
+        return change == 0 ? $"{number.ToString("C")}" : $"{number.ToString("C").Substring(0, number.ToString("C").Length-3)}.{Math.Round(change, 5, MidpointRounding.AwayFromZero).ToString().Substring(2)}";
     }
 
 

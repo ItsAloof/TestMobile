@@ -1,13 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
-using UnityEngine;
+using System;
 
 
-public class BankAccount : MonoBehaviour
+public class BankAccount
 {
     BigDecimal balance;
-    string accountName { get; }
+    string accountName { get; set; }
     public BankAccount(string name)
     {
         this.accountName = name;
@@ -20,7 +20,7 @@ public class BankAccount : MonoBehaviour
 
     public void addMoney(double amount)
     {
-        balance.add(amount);
+        balance.add(Math.Round(amount, 5, MidpointRounding.AwayFromZero));
     }
 
     public string getBalanceString()
